@@ -18,7 +18,7 @@ const (
 type Rank int
 
 const (
-	Ace Rank = iota
+	Ace Rank = iota + 1
 	Two
 	Three
 	Four
@@ -34,8 +34,8 @@ const (
 )
 
 type Card struct {
-	Suit Suit
 	Rank Rank
+	Suit Suit
 }
 
 var (
@@ -76,7 +76,7 @@ func Shuffle() {
 	// Reset the deck.
 	deck = make([]Card, 52)
 	for i := 0; i < 52; i++ {
-		deck[i] = Card{Suit(i % 4), Rank(i % 13)}
+		deck[i] = Card{Rank(i % 13), Suit(i % 4)}
 	}
 
 	// Modern Fisher-Yates shuffle.
@@ -121,4 +121,78 @@ func Take(n int) ([]Card, error) {
 
 func Remaining() int {
 	return len(deck)
+}
+
+type Hand []Card
+type OrderedHand []Card
+
+// Sorts the hands by rank.
+// Aces are considered low, for the purposes of sorting.
+// Suit is not considered.  The outcome is stable.
+func (h Hand) Sort() Hand {
+	if len(h) > 1 {
+		return mergeSort(h)
+	}
+
+	return h
+}
+
+// [Merge sorts] a hand of cards, by rank.
+// Suits are not considered.  The outcome is stable.
+//
+// [Merge sorts]: https://en.wikipedia.org/wiki/Merge_sort
+func mergeSort(h Hand) Hand {
+	// Nothing to sort, exit early.
+	if len(h) == 1 {
+		return h
+	}
+
+	var left Hand
+	var right Hand
+
+	for i, card := range h {
+		if i < len(h)/2 {
+			left = append(left, card)
+		} else {
+			right = append(right, card)
+		}
+	}
+
+	left = left.Sort()
+	right = right.Sort()
+
+	return merge(left, right)
+}
+
+// Merges left and right.
+// Taking the lowest rank from the head of left/right on each iteration.
+// The result is a stable sorted merge.
+func merge(left, right Hand) Hand {
+	var result Hand
+
+	// Iterate until either left or right is depleted.
+	// Always take lower of the two and append to result.
+	for len(left) > 0 && len(right) > 0 {
+		if left[0].Rank <= right[0].Rank {
+			result = append(result, left[0])
+			left = left[1:]
+		} else {
+			result = append(result, right[0])
+			right = right[1:]
+		}
+	}
+
+	// Consume any remaining elements.
+	// At most only one of these conditions will be true.
+	for len(left) > 0 {
+		result = append(result, left[0])
+		left = left[1:]
+	}
+
+	for len(right) > 0 {
+		result = append(result, right[0])
+		right = right[1:]
+	}
+
+	return result
 }

@@ -1,6 +1,9 @@
 package cards_test
 
 import (
+	"slices"
+	"strconv"
+	"strings"
 	"testing"
 
 	"example.com/cards/cards"
@@ -70,4 +73,163 @@ func Test_Remaining_ReturnsExpectedNumber(t *testing.T) {
 			t.Errorf("Unexpected number of cards remain.  Expected %d.  Actual: %d.", expected, actual)
 		}
 	}
+}
+
+func Test_Sort_ReturnsExpectedResult(t *testing.T) {
+	testCases := []struct {
+		name     string
+		hand     cards.Hand
+		expected cards.Hand
+	}{
+		{
+			name:     "odd number of cards",
+			hand:     parseHand("4d 3d 2d"),
+			expected: parseHand("2d 3d 4d"),
+		},
+		{
+			name:     "even number of cards",
+			hand:     parseHand("4s 7c 6h 5d"),
+			expected: parseHand("4s 5d 6h 7c"),
+		},
+		{
+			name:     "supports lot of cards",
+			hand:     parseHand("7s 3s 2s as 4s js 5s qs ks 6s 8s 9s"),
+			expected: parseHand("as 2s 3s 4s 5s 6s 7s 8s 9s js qs ks"),
+		},
+		{
+			name:     "supports single cards",
+			hand:     parseHand("qh"),
+			expected: parseHand("qh"),
+		},
+		{
+			name:     "does not fail when passed an empty hand",
+			hand:     cards.Hand{},
+			expected: cards.Hand{},
+		},
+		{
+			name:     "already sorted",
+			hand:     parseHand("as 2h 3c 4c 5c 6d 7d 8h 9c Ts jc qh kd"),
+			expected: parseHand("as 2h 3c 4c 5c 6d 7d 8h 9c Ts jc qh kd"),
+		},
+		{
+			name:     "big gaps",
+			hand:     parseHand("ks as"),
+			expected: parseHand("as ks"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual := testCase.hand.Sort()
+		if !slices.Equal(testCase.expected, actual) {
+			t.Errorf(
+				"Sort produced unexpected result.  Case: %v.  Expected: %v.  Actual: %v.",
+				testCase.name,
+				testCase.expected,
+				actual)
+		}
+	}
+}
+
+func Test_Sort_AcesAreLow(t *testing.T) {
+	testCases := []struct {
+		hand     cards.Hand
+		expected cards.Hand
+	}{
+		{
+			hand:     parseHand("ad kd qd"),
+			expected: parseHand("ad qd kd"),
+		},
+		{
+			hand:     parseHand("ac 4d 5h 6s"),
+			expected: parseHand("ac 4d 5h 6s"),
+		},
+		{
+			hand:     parseHand("4d ac kh 6s 5h"),
+			expected: parseHand("ac 4d 5h 6s kh"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual := testCase.hand.Sort()
+		if !slices.Equal(testCase.expected, actual) {
+			t.Errorf("Sort produced unexpected result.  Expected: %v.  Actual: %v.", testCase.expected, actual)
+		}
+	}
+}
+
+func Test_Sort_StableSortsSuits(t *testing.T) {
+	testCases := []struct {
+		hand     cards.Hand
+		expected cards.Hand
+	}{
+		{
+			hand:     parseHand("ac ah as ad"),
+			expected: parseHand("ac ah as ad"),
+		},
+		{
+			hand:     parseHand("4h 4c js 2d"),
+			expected: parseHand("2d 4h 4c js"),
+		},
+		{
+			hand:     parseHand("qh 4d 4s 4c 3h"),
+			expected: parseHand("3h 4d 4s 4c qh"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual := testCase.hand.Sort()
+		if !slices.Equal(testCase.expected, actual) {
+			t.Errorf("Sort produced unexpected result.  Expected: %v.  Actual: %v.", testCase.expected, actual)
+		}
+	}
+}
+
+// Generates a hand from a string.
+// Example: "2d 3c th ks" returns a slice of four cards:
+//   - Card{Rank: Two, Suit: Diamonds}
+//   - Card{Rank: Three, Suit: Clubs}
+//   - Card{Rank: Ten, Suit: Hearts}
+//   - Card{Rank: King, Suit: Spades}
+//
+// Helper util.  Use to make test setup code less verbose and easier to read.
+func parseHand(hand string) cards.Hand {
+	var result []cards.Card
+
+	const space = " "
+	elements := strings.Split(hand, space)
+
+	for _, element := range elements {
+		var rank cards.Rank
+		switch element[0] {
+		case 't', 'T':
+			rank = cards.Ten
+		case 'j', 'J':
+			rank = cards.Jack
+		case 'q', 'Q':
+			rank = cards.Queen
+		case 'k', 'K':
+			rank = cards.King
+		case 'a', 'A':
+			rank = cards.Ace
+		default:
+			i, _ := strconv.ParseInt(string(element[0]), 10, 64)
+			rank = cards.Rank(i)
+		}
+
+		var suit cards.Suit
+		switch element[1] {
+		case 'c', 'C':
+			suit = cards.Clubs
+		case 'd', 'D':
+			suit = cards.Diamonds
+		case 'h', 'H':
+			suit = cards.Hearts
+		case 's', 'S':
+			suit = cards.Spades
+		}
+
+		result = append(result, cards.Card{rank, suit})
+	}
+
+	return cards.Hand(result)
 }
