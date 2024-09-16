@@ -228,7 +228,7 @@ func parseHand(hand string) cards.Hand {
 			suit = cards.Spades
 		}
 
-		result = append(result, cards.Card{rank, suit})
+		result = append(result, cards.Card{Rank: rank, Suit: suit})
 	}
 
 	return cards.Hand(result)

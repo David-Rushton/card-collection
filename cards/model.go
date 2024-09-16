@@ -9,7 +9,7 @@ import (
 type Suit int
 
 const (
-	Clubs Suit = iota
+	Clubs Suit = iota + 1
 	Diamonds
 	Hearts
 	Spades
@@ -166,7 +166,6 @@ func mergeSort(h Hand) Hand {
 
 // Merges left and right.
 // Taking the lowest rank from the head of left/right on each iteration.
-// The result is a stable sorted merge.
 func merge(left, right Hand) Hand {
 	var result Hand
 
@@ -183,7 +182,7 @@ func merge(left, right Hand) Hand {
 	}
 
 	// Consume any remaining elements.
-	// At most only one of these conditions will be true.
+	// At most one of these for statements will be true.
 	for len(left) > 0 {
 		result = append(result, left[0])
 		left = left[1:]
