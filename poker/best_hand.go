@@ -3,7 +3,7 @@ package poker
 import (
 	"slices"
 
-	"example.com/cards/cards"
+	"github.com/David-Rushton/card-collection/cards"
 )
 
 // https://en.wikipedia.org/wiki/Texas_hold_%27em#Hand_values

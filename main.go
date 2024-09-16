@@ -2,8 +2,8 @@
 package main
 
 import (
-	"example.com/cards/cards"
-	"example.com/cards/poker"
+	"github.com/David-Rushton/card-collection/cards"
+	"github.com/David-Rushton/card-collection/poker"
 )
 
 func main() {

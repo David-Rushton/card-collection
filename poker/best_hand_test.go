@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"example.com/cards/cards"
-	"example.com/cards/poker"
+	"github.com/David-Rushton/card-collection/cards"
+	"github.com/David-Rushton/card-collection/poker"
 )
 
 func Test_BestHand_ReturnsHighCard(t *testing.T) {

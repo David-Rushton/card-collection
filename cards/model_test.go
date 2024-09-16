@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"example.com/cards/cards"
+	"github.com/David-Rushton/card-collection/cards"
 )
 
 func Test_Shuffle_Generates52Cards(t *testing.T) {

@@ -1,3 +1,3 @@
-module example.com/cards
+module github.com/David-Rushton/card-collection
 
-go 1.23.0
+go 1.23
