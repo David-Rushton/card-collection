@@ -18,7 +18,7 @@ func Test_BestHand_ReturnsHighCard(t *testing.T) {
 	}{
 		{
 			hand:         parseHand("3s 5d 7c 9s Th"),
-			expectedHand: parseHand("Th"),
+			expectedHand: parseHand("Th 9s 7c 5d 3s"),
 			expectedType: poker.HighCard,
 		},
 	}
@@ -44,7 +44,7 @@ func Test_BestHand_ReturnsPair(t *testing.T) {
 	}{
 		{
 			hand:         parseHand("3h 3s 7d qc kc"),
-			expectedHand: parseHand("3h 3s"),
+			expectedHand: parseHand("3h 3s kc qc 7d"),
 			expectedType: poker.Pair,
 		},
 	}
@@ -70,7 +70,7 @@ func Test_BestHand_ReturnsTwoPairs(t *testing.T) {
 	}{
 		{
 			hand:         parseHand("2h 2d 3c 3s 7c"),
-			expectedHand: parseHand("2h 2d 3c 3s"),
+			expectedHand: parseHand("3c 3s 2h 2d 7c"),
 			expectedType: poker.TwoPairs,
 		},
 	}
@@ -96,7 +96,7 @@ func Test_BestHand_ReturnsThreeOfAKind(t *testing.T) {
 	}{
 		{
 			hand:         parseHand("2d 2h 2s qs 9c"),
-			expectedHand: parseHand("2d 2h 2s"),
+			expectedHand: parseHand("2d 2h 2s qs 9c"),
 			expectedType: poker.ThreeOfAKind,
 		},
 	}
@@ -122,7 +122,7 @@ func Test_BestHand_ReturnsStraight(t *testing.T) {
 	}{
 		{
 			hand:         parseHand("6h 7s 8h 9c tc"),
-			expectedHand: parseHand(""),
+			expectedHand: parseHand("6h 7s 8h 9c tc"),
 			expectedType: poker.Straight,
 		},
 	}
@@ -200,7 +200,7 @@ func Test_BestHand_ReturnsFourOfAKind(t *testing.T) {
 	}{
 		{
 			hand:         parseHand("4c 4d 4s 4h 5c"),
-			expectedHand: parseHand("4c 4d 4s 4h"),
+			expectedHand: parseHand("4c 4d 4s 4h 5c"),
 			expectedType: poker.FourOfAKind,
 		},
 	}
@@ -252,7 +252,7 @@ func Test_BestHand_ReturnsRoyalFlush(t *testing.T) {
 	}{
 		{
 			hand:         parseHand("Th jh qh kh ah"),
-			expectedHand: parseHand(""),
+			expectedHand: parseHand("Th jh qh kh ah"),
 			expectedType: poker.RoyalFlush,
 		},
 	}

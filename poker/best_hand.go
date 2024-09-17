@@ -48,6 +48,9 @@ func BestHand(hand cards.Hand) (HandType, cards.Hand) {
 	cardsBySuit := make(map[cards.Suit][]cards.Card)
 	sortedRanks := []cards.Rank{}
 
+	// Placing the highest values cards at the start simplifies finding them later.
+	// slices.Reverse(sortedHand)
+
 	for _, card := range sortedHand {
 		countBySuit[card.Suit]++
 		countByRank[card.Rank]++
@@ -103,22 +106,34 @@ func BestHand(hand cards.Hand) (HandType, cards.Hand) {
 		}
 	}
 
+	slices.Reverse(pairs)
+	slices.Reverse(triples)
+	slices.Reverse(quadruples)
+
 	var consecutiveCards []cards.Card
 	for _, k := range sortedRanks {
 		v := cardsByRank[k]
 		if lastRank == 0 {
 			lastRank = k
-			consecutiveCards = append(consecutiveCards, getCard(v, favourSuit))
+			consecutiveCards = []cards.Card{getCard(v, favourSuit)}
 			continue
 		}
 
 		if k == lastRank+1 {
 			consecutiveCards = append(consecutiveCards, getCard(v, favourSuit))
 		} else {
-			consecutiveCards = []cards.Card{}
+			consecutiveCards = []cards.Card{getCard(v, favourSuit)}
 		}
 
 		lastRank = k
+	}
+
+	// Special case.
+	// Aces are high, as well as low.
+	if len(consecutiveCards) >= 4 &&
+		consecutiveCards[len(consecutiveCards)-1].Rank == cards.King &&
+		sortedHand[0].Rank == cards.Ace {
+		consecutiveCards = append(consecutiveCards, getCard(cardsByRank[cards.Ace], favourSuit))
 	}
 
 	// The final five are the highest value
@@ -131,11 +146,30 @@ func BestHand(hand cards.Hand) (HandType, cards.Hand) {
 		consecutiveSuits[c.Suit]++
 	}
 
+	// TODO: Tidy this away.
+	// HACK: Relies on order of from.
+	takeKickers := func(from cards.Hand, to cards.Hand) cards.Hand {
+		for i := len(from) - 1; i >= 0; i-- {
+			if len(to) >= 5 {
+				break
+			}
+
+			if !slices.Contains(to, from[i]) {
+				to = append(to, from[i])
+			}
+		}
+
+		return to
+	}
+
 	// ## Phase 2 || Return best available hand
 
 	// royalFlush
-	// TODO: Support high aces.
-
+	if len(consecutiveCards) == 5 &&
+		len(consecutiveSuits) == 1 &&
+		consecutiveCards[len(consecutiveCards)-1].Rank == cards.Ace {
+		return RoyalFlush, consecutiveCards
+	}
 	// straightFlush
 	if len(consecutiveCards) == 5 && len(consecutiveSuits) == 1 {
 		return StraightFlush, consecutiveCards
@@ -143,7 +177,7 @@ func BestHand(hand cards.Hand) (HandType, cards.Hand) {
 
 	// fourOfAKind
 	if len(quadruples) > 0 {
-		return FourOfAKind, cardsByRank[quadruples[0]]
+		return FourOfAKind, takeKickers(sortedHand, cardsByRank[quadruples[0]])
 	}
 
 	// fullHouse
@@ -162,22 +196,22 @@ func BestHand(hand cards.Hand) (HandType, cards.Hand) {
 	}
 
 	// threeOfAKind
-	if len(triples) > 1 {
-		return ThreeOfAKind, cardsByRank[triples[0]]
+	if len(triples) > 0 {
+		return ThreeOfAKind, takeKickers(sortedHand, cardsByRank[triples[0]])
 	}
 
 	// twoPairs
 	if len(pairs) == 2 {
-		return TwoPairs, slices.Concat(cardsByRank[pairs[0]], cardsByRank[pairs[1]])
+		return TwoPairs, takeKickers(sortedHand, slices.Concat(cardsByRank[pairs[0]], cardsByRank[pairs[1]]))
 	}
 
 	// pair
 	if len(pairs) == 1 {
-		return Pair, cardsByRank[pairs[0]]
+		return Pair, takeKickers(sortedHand, cardsByRank[pairs[0]])
 	}
 
 	// highCard
-	return HighCard, cards.Hand{sortedHand[len(sortedHand)-1]}
+	return HighCard, takeKickers(sortedHand, cards.Hand{sortedHand[len(sortedHand)-1]})
 }
 
 // func extractFlush(hand []cards.Card) (flush []cards.Card, ok bool) {
