@@ -1,6 +1,7 @@
 package poker
 
 import (
+	"log"
 	"slices"
 
 	"github.com/David-Rushton/card-collection/cards"
@@ -21,6 +22,8 @@ const (
 	StraightFlush
 	RoyalFlush
 )
+
+// TODO: Review and use cards.OrderedHand over cards.Hand, where appropriate.
 
 // Returns the best hand available.
 func BestHand(hand cards.Hand) (HandType, cards.Hand) {
@@ -110,30 +113,29 @@ func BestHand(hand cards.Hand) (HandType, cards.Hand) {
 	slices.Reverse(triples)
 	slices.Reverse(quadruples)
 
-	var consecutiveCards []cards.Card
-	for _, k := range sortedRanks {
+	// Special case.  Aces are low and high.
+	if sortedRanks[len(sortedRanks)-1] == cards.Ace {
+		sortedRanks = slices.Concat([]cards.Rank{cards.Ace}, sortedRanks)
+	}
+
+	consecutiveCards := []cards.Card{}
+	for i, k := range sortedRanks {
 		v := cardsByRank[k]
-		if lastRank == 0 {
+
+		// Last card is one higher than the previous.
+		if lastRank == 0 || k == lastRank+1 || (lastRank == cards.King && k == cards.Ace) {
+			consecutiveCards = append(consecutiveCards, getCard(v, favourSuit))
 			lastRank = k
-			consecutiveCards = []cards.Card{getCard(v, favourSuit)}
 			continue
 		}
 
-		if k == lastRank+1 {
-			consecutiveCards = append(consecutiveCards, getCard(v, favourSuit))
-		} else {
-			consecutiveCards = []cards.Card{getCard(v, favourSuit)}
+		// We won't find a straight at this point.
+		if len(sortedRanks)-i < 5 {
+			break
 		}
 
+		consecutiveCards = []cards.Card{getCard(v, favourSuit)}
 		lastRank = k
-	}
-
-	// Special case.
-	// Aces are high, as well as low.
-	if len(consecutiveCards) >= 4 &&
-		consecutiveCards[len(consecutiveCards)-1].Rank == cards.King &&
-		sortedHand[0].Rank == cards.Ace {
-		consecutiveCards = append(consecutiveCards, getCard(cardsByRank[cards.Ace], favourSuit))
 	}
 
 	// The final five are the highest value
@@ -148,6 +150,7 @@ func BestHand(hand cards.Hand) (HandType, cards.Hand) {
 
 	// TODO: Tidy this away.
 	// HACK: Relies on order of from.
+	// TODO : Does not support high aces 🫠.
 	takeKickers := func(from cards.Hand, to cards.Hand) cards.Hand {
 		for i := len(from) - 1; i >= 0; i-- {
 			if len(to) >= 5 {
@@ -214,34 +217,79 @@ func BestHand(hand cards.Hand) (HandType, cards.Hand) {
 	return HighCard, takeKickers(sortedHand, cards.Hand{sortedHand[len(sortedHand)-1]})
 }
 
-// func extractFlush(hand []cards.Card) (flush []cards.Card, ok bool) {
+// Scores a hand.
+// Higher is better.
+func ScoreHand(handType HandType, hand cards.Hand) int64 {
+	// Each hand is assigned an integer score.
+	//
+	// The first two digits are hand type, where better hands are assigned a higher multiple.
+	// The next two digits are the value of the first cards rank.  Ace == 13, King == 12, on so on.
+	// Until we reach 2, with is worth 02.  We continue with the rest of the cards.
+	//
+	// Example Hand:
+	// Type: Straight
+	// Cards: 7 Diamonds, 8 Clubs, 9 Spades, 10 Spades and Jack of Clubs
+	//
+	// Straight is the 5th best hand.  This scores 04, as we index zero.  Followed by 07 for the
+	// 7 of diamonds, and 08 for the 8 of clubs.  Etc.
+	//
+	// Result: 04 07 08 09 10 11
+	// Formatted: 40,708,091,011
+	//
+	// In this case a straight starting with an 8 and ending with a Queen would command a better
+	// score.
 
-// }
+	if len(hand) > 5 {
+		log.Fatalf("Cannot score hand.  The hand contains too many cards.  Expected up to 5.  But found %v.", len(hand))
+	}
 
-// Returns the most common suit within the hand.
-// In the event of a draw, we tie break on position within the hand.  Where later outranks earlier.
-// Draws won't effect how we score a hand.  You need 5 of a suit to build a flush.  As we never
-// consider hands of more than 7 cards; a draw will never result in a flush.
-// func mostCommonSuit(hand []cards.Card) cards.Suit {
-// 	var result cards.Suit
-// 	maxCount := 0
-// 	countBySuit := make(map[cards.Suit]int)
+	score := int64(0)
+	multiplier := int64(1)
+	for i := len(hand) - 1; i >= 0; i-- {
+		score += int64(rankScore(hand[i].Rank)) * multiplier
+		multiplier *= 100
+	}
 
-// 	for _, card := range hand {
-// 		countBySuit[card.Suit]++
+	score += int64(handType) * multiplier
 
-// 		// We won't find a higher count.
-// 		if countBySuit[card.Suit] > (len(hand)/2)+1 {
-// 			return card.Suit
-// 		}
+	return score
+}
 
-// 		// Track the most popular suit.
-// 		// This will return the last seen suit in the event of a tie.
-// 		maxCount = max(maxCount, countBySuit[card.Suit])
-// 		if countBySuit[card.Suit] == maxCount {
-// 			result = card.Suit
-// 		}
-// 	}
+// Converts a rank to a score.
+// Aces are always high.
+func rankScore(r cards.Rank) int64 {
+	switch r {
+	case cards.Ace:
+		return 14
+	case cards.Two:
+		return 2
+	case cards.Three:
+		return 3
+	case cards.Four:
+		return 4
+	case cards.Five:
+		return 5
+	case cards.Six:
+		return 6
+	case cards.Seven:
+		return 7
+	case cards.Eight:
+		return 8
+	case cards.Nine:
+		return 9
+	case cards.Ten:
+		return 10
+	case cards.Jack:
+		return 11
+	case cards.Queen:
+		return 12
+	case cards.King:
+		return 13
+	default:
+		log.Fatalf("Rank not supported: %v.  This error is fatal and cannot be recovered.  A code change is required to fix.", r)
+	}
 
-// 	return result
-// }
+	// We will never reach this line.
+	// But the compiler doesn't know that (as of Go 1.23.1) 😑.
+	return 0
+}

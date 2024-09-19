@@ -27,7 +27,7 @@ func Test_Take_Returns52UniqueCardsWhenShuffled(t *testing.T) {
 	hand, err := cards.Take(52)
 
 	if err != nil {
-		t.Errorf("Cannot take 52 cards from freshly shuffled deck.  Beause %v", err)
+		t.Errorf("Cannot take 52 cards from freshly shuffled deck.  Because %v", err)
 	}
 
 	for _, card := range hand {
@@ -93,8 +93,8 @@ func Test_Sort_ReturnsExpectedResult(t *testing.T) {
 		},
 		{
 			name:     "supports lot of cards",
-			hand:     parseHand("7s 3s 2s as 4s js 5s qs ks 6s 8s 9s"),
-			expected: parseHand("as 2s 3s 4s 5s 6s 7s 8s 9s js qs ks"),
+			hand:     parseHand("7s 3s 2s As 4s Js 5s Qs Ks 6s 8s 9s"),
+			expected: parseHand("2s 3s 4s 5s 6s 7s 8s 9s Js Qs Ks As"),
 		},
 		{
 			name:     "supports single cards",
@@ -108,13 +108,13 @@ func Test_Sort_ReturnsExpectedResult(t *testing.T) {
 		},
 		{
 			name:     "already sorted",
-			hand:     parseHand("as 2h 3c 4c 5c 6d 7d 8h 9c Ts jc qh kd"),
-			expected: parseHand("as 2h 3c 4c 5c 6d 7d 8h 9c Ts jc qh kd"),
+			hand:     parseHand("2h 3c 4c 5c 6d 7d 8h 9c Ts Jc Qh Kd As"),
+			expected: parseHand("2h 3c 4c 5c 6d 7d 8h 9c Ts Jc Qh Kd As"),
 		},
 		{
 			name:     "big gaps",
-			hand:     parseHand("ks as"),
-			expected: parseHand("as ks"),
+			hand:     parseHand("As 2s"),
+			expected: parseHand("2s As"),
 		},
 	}
 
@@ -130,22 +130,22 @@ func Test_Sort_ReturnsExpectedResult(t *testing.T) {
 	}
 }
 
-func Test_Sort_AcesAreLow(t *testing.T) {
+func Test_Sort_AcesAreHigh(t *testing.T) {
 	testCases := []struct {
 		hand     cards.Hand
 		expected cards.Hand
 	}{
 		{
-			hand:     parseHand("ad kd qd"),
-			expected: parseHand("ad qd kd"),
+			hand:     parseHand("Ad Kd Qd"),
+			expected: parseHand("Qd Kd Ad"),
 		},
 		{
-			hand:     parseHand("ac 4d 5h 6s"),
-			expected: parseHand("ac 4d 5h 6s"),
+			hand:     parseHand("Ac 4d 5h 6s"),
+			expected: parseHand("4d 5h 6s Ac"),
 		},
 		{
-			hand:     parseHand("4d ac kh 6s 5h"),
-			expected: parseHand("ac 4d 5h 6s kh"),
+			hand:     parseHand("4d Ac Kh 6s 5h"),
+			expected: parseHand("4d 5h 6s Kh Ac"),
 		},
 	}
 

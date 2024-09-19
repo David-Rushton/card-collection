@@ -127,7 +127,7 @@ type Hand []Card
 type OrderedHand []Card
 
 // Sorts the hands by rank.
-// Aces are considered low, for the purposes of sorting.
+// Aces are considered high.
 // Suit is not considered.  The outcome is stable.
 func (h Hand) Sort() Hand {
 	if len(h) > 1 {
@@ -172,7 +172,7 @@ func merge(left, right Hand) Hand {
 	// Iterate until either left or right is depleted.
 	// Always take lower of the two and append to result.
 	for len(left) > 0 && len(right) > 0 {
-		if left[0].Rank <= right[0].Rank {
+		if rankOrder(left[0].Rank) <= rankOrder(right[0].Rank) {
 			result = append(result, left[0])
 			left = left[1:]
 		} else {
@@ -194,4 +194,12 @@ func merge(left, right Hand) Hand {
 	}
 
 	return result
+}
+
+func rankOrder(r Rank) int {
+	if r == Ace {
+		return int(King) + 1
+	}
+
+	return int(r)
 }

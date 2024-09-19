@@ -69,7 +69,7 @@ func Test_BestHand_ReturnsTwoPairs(t *testing.T) {
 		expectedType poker.HandType
 	}{
 		{
-			hand:         parseHand("2h 2d 3c 3s 7c"),
+			hand:         parseHand("2h 2d 7c 3c 3s"),
 			expectedHand: parseHand("3c 3s 2h 2d 7c"),
 			expectedType: poker.TwoPairs,
 		},
@@ -123,6 +123,24 @@ func Test_BestHand_ReturnsStraight(t *testing.T) {
 		{
 			hand:         parseHand("6h 7s 8h 9c tc"),
 			expectedHand: parseHand("6h 7s 8h 9c tc"),
+			expectedType: poker.Straight,
+		},
+		// Aces low.
+		{
+			hand:         parseHand("5s 4h 2h 3h Ad"),
+			expectedHand: parseHand("Ad 2h 3h 4h 5s"),
+			expectedType: poker.Straight,
+		},
+		// Aces high.
+		{
+			hand:         parseHand("Ac Tc Qs Jc Kd"),
+			expectedHand: parseHand("Tc Jc Qs Kd Ac"),
+			expectedType: poker.Straight,
+		},
+		// Straight at start of available cards.
+		{
+			hand:         parseHand("5h 3h 2s Ac 4s 8c 9d"),
+			expectedHand: parseHand("Ac 2s 3h 4s 5h"),
 			expectedType: poker.Straight,
 		},
 	}
@@ -266,6 +284,77 @@ func Test_BestHand_ReturnsRoyalFlush(t *testing.T) {
 
 		if !slices.Equal(testCase.expectedHand, actualHand) {
 			t.Errorf("BestHand did not return expected cards.  Expected: %v.  Actual: %v.", testCase.expectedHand, actualHand)
+		}
+	}
+}
+
+func Test_ScoreHand_CorrectlyRanksHands(t *testing.T) {
+	testCases := []struct {
+		better      cards.Hand
+		worse       cards.Hand
+		description string
+	}{
+		{
+			better:      parseHand("3d 6d 9h Jh As"),
+			worse:       parseHand("3d 6d 9h Jh Ks"),
+			description: "High card should outrank lower high card",
+		},
+		{
+			better:      parseHand("3c 3h 9h 4s 7d"),
+			worse:       parseHand("as 4c 7s 9d Qc"),
+			description: "Pair should outrank high card",
+		},
+		{
+			better:      parseHand("as ac 7s 7d Qc"),
+			worse:       parseHand("3c 3h 9h 4s 7d"),
+			description: "Two pair should outrank pair",
+		},
+		{
+			better:      parseHand("Qc Qs Qh Th 9h"),
+			worse:       parseHand("as ac 7s 7d Qc"),
+			description: "Three-of-a-kind should outrank two pair",
+		},
+		{
+			better:      parseHand("5c 6s 7s 8s 9s"),
+			worse:       parseHand("Qc Qs Qh Th 9h"),
+			description: "Straight should outrank three-of-a-kind",
+		},
+		{
+			better:      parseHand("3s 4s 7s Ks Qs"),
+			worse:       parseHand("5c 6s 7s 8s 9s"),
+			description: "Flush should outrank straight",
+		},
+		{
+			better:      parseHand("Kh Ks Kd Ad As"),
+			worse:       parseHand("3s 4s 7s Ks Qs"),
+			description: "Full house should outrank flush",
+		},
+		{
+			better:      parseHand("4c 4h 4s 4d 5s"),
+			worse:       parseHand("Kh Ks Kd Ad As"),
+			description: "Four-of-a-kind house should outrank full house",
+		},
+		{
+			better:      parseHand("8h 9h Th Jh Qh"),
+			worse:       parseHand("4c 4h 4s 4d 5s"),
+			description: "Straight flush house should outrank four-of-a-kind",
+		},
+		{
+			better:      parseHand("Td Jd Qd Kd Ad"),
+			worse:       parseHand("8h 9h Th Jh Qh"),
+			description: "Royal flush house should outrank straight flush",
+		},
+	}
+
+	for _, testCase := range testCases {
+		worseType, worseHand := poker.BestHand(testCase.worse)
+		betterType, betterHand := poker.BestHand(testCase.better)
+		if poker.ScoreHand(worseType, worseHand) > poker.ScoreHand(betterType, betterHand) {
+			t.Errorf(
+				"Score hand failed: %v.  Better hand: %v.  Worse hand: %v.",
+				testCase.description,
+				betterHand,
+				worseHand)
 		}
 	}
 }
