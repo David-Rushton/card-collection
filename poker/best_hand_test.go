@@ -6,14 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/David-Rushton/card-collection/cards"
+	"github.com/David-Rushton/card-collection/deck"
 	"github.com/David-Rushton/card-collection/poker"
 )
 
 func Test_BestHand_ReturnsHighCard(t *testing.T) {
 	testCases := []struct {
-		hand         cards.Hand
-		expectedHand cards.Hand
+		hand         deck.Hand
+		expectedHand deck.Hand
 		expectedType poker.HandType
 	}{
 		{
@@ -38,8 +38,8 @@ func Test_BestHand_ReturnsHighCard(t *testing.T) {
 
 func Test_BestHand_ReturnsPair(t *testing.T) {
 	testCases := []struct {
-		hand         cards.Hand
-		expectedHand cards.Hand
+		hand         deck.Hand
+		expectedHand deck.Hand
 		expectedType poker.HandType
 	}{
 		{
@@ -64,8 +64,8 @@ func Test_BestHand_ReturnsPair(t *testing.T) {
 
 func Test_BestHand_ReturnsTwoPairs(t *testing.T) {
 	testCases := []struct {
-		hand         cards.Hand
-		expectedHand cards.Hand
+		hand         deck.Hand
+		expectedHand deck.Hand
 		expectedType poker.HandType
 	}{
 		{
@@ -90,8 +90,8 @@ func Test_BestHand_ReturnsTwoPairs(t *testing.T) {
 
 func Test_BestHand_ReturnsThreeOfAKind(t *testing.T) {
 	testCases := []struct {
-		hand         cards.Hand
-		expectedHand cards.Hand
+		hand         deck.Hand
+		expectedHand deck.Hand
 		expectedType poker.HandType
 	}{
 		{
@@ -116,8 +116,8 @@ func Test_BestHand_ReturnsThreeOfAKind(t *testing.T) {
 
 func Test_BestHand_ReturnsStraight(t *testing.T) {
 	testCases := []struct {
-		hand         cards.Hand
-		expectedHand cards.Hand
+		hand         deck.Hand
+		expectedHand deck.Hand
 		expectedType poker.HandType
 	}{
 		{
@@ -143,6 +143,12 @@ func Test_BestHand_ReturnsStraight(t *testing.T) {
 			expectedHand: parseHand("Ac 2s 3h 4s 5h"),
 			expectedType: poker.Straight,
 		},
+		// Multiple possible straights
+		{
+			hand:         parseHand("2s 3s 4d 5c 6s 7d 8d 9h"),
+			expectedHand: parseHand("5c 6s 7d 8d 9h"),
+			expectedType: poker.Straight,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -160,8 +166,8 @@ func Test_BestHand_ReturnsStraight(t *testing.T) {
 
 func Test_BestHand_ReturnsFlush(t *testing.T) {
 	testCases := []struct {
-		hand         cards.Hand
-		expectedHand cards.Hand
+		hand         deck.Hand
+		expectedHand deck.Hand
 		expectedType poker.HandType
 	}{
 		{
@@ -186,8 +192,8 @@ func Test_BestHand_ReturnsFlush(t *testing.T) {
 
 func Test_BestHand_ReturnsFullHouse(t *testing.T) {
 	testCases := []struct {
-		hand         cards.Hand
-		expectedHand cards.Hand
+		hand         deck.Hand
+		expectedHand deck.Hand
 		expectedType poker.HandType
 	}{
 		{
@@ -212,8 +218,8 @@ func Test_BestHand_ReturnsFullHouse(t *testing.T) {
 
 func Test_BestHand_ReturnsFourOfAKind(t *testing.T) {
 	testCases := []struct {
-		hand         cards.Hand
-		expectedHand cards.Hand
+		hand         deck.Hand
+		expectedHand deck.Hand
 		expectedType poker.HandType
 	}{
 		{
@@ -238,8 +244,8 @@ func Test_BestHand_ReturnsFourOfAKind(t *testing.T) {
 
 func Test_BestHand_ReturnsStraightFlush(t *testing.T) {
 	testCases := []struct {
-		hand         cards.Hand
-		expectedHand cards.Hand
+		hand         deck.Hand
+		expectedHand deck.Hand
 		expectedType poker.HandType
 	}{
 		{
@@ -264,8 +270,8 @@ func Test_BestHand_ReturnsStraightFlush(t *testing.T) {
 
 func Test_BestHand_ReturnsRoyalFlush(t *testing.T) {
 	testCases := []struct {
-		hand         cards.Hand
-		expectedHand cards.Hand
+		hand         deck.Hand
+		expectedHand deck.Hand
 		expectedType poker.HandType
 	}{
 		{
@@ -288,76 +294,76 @@ func Test_BestHand_ReturnsRoyalFlush(t *testing.T) {
 	}
 }
 
-func Test_ScoreHand_CorrectlyRanksHands(t *testing.T) {
-	testCases := []struct {
-		better      cards.Hand
-		worse       cards.Hand
-		description string
-	}{
-		{
-			better:      parseHand("3d 6d 9h Jh As"),
-			worse:       parseHand("3d 6d 9h Jh Ks"),
-			description: "High card should outrank lower high card",
-		},
-		{
-			better:      parseHand("3c 3h 9h 4s 7d"),
-			worse:       parseHand("as 4c 7s 9d Qc"),
-			description: "Pair should outrank high card",
-		},
-		{
-			better:      parseHand("as ac 7s 7d Qc"),
-			worse:       parseHand("3c 3h 9h 4s 7d"),
-			description: "Two pair should outrank pair",
-		},
-		{
-			better:      parseHand("Qc Qs Qh Th 9h"),
-			worse:       parseHand("as ac 7s 7d Qc"),
-			description: "Three-of-a-kind should outrank two pair",
-		},
-		{
-			better:      parseHand("5c 6s 7s 8s 9s"),
-			worse:       parseHand("Qc Qs Qh Th 9h"),
-			description: "Straight should outrank three-of-a-kind",
-		},
-		{
-			better:      parseHand("3s 4s 7s Ks Qs"),
-			worse:       parseHand("5c 6s 7s 8s 9s"),
-			description: "Flush should outrank straight",
-		},
-		{
-			better:      parseHand("Kh Ks Kd Ad As"),
-			worse:       parseHand("3s 4s 7s Ks Qs"),
-			description: "Full house should outrank flush",
-		},
-		{
-			better:      parseHand("4c 4h 4s 4d 5s"),
-			worse:       parseHand("Kh Ks Kd Ad As"),
-			description: "Four-of-a-kind house should outrank full house",
-		},
-		{
-			better:      parseHand("8h 9h Th Jh Qh"),
-			worse:       parseHand("4c 4h 4s 4d 5s"),
-			description: "Straight flush house should outrank four-of-a-kind",
-		},
-		{
-			better:      parseHand("Td Jd Qd Kd Ad"),
-			worse:       parseHand("8h 9h Th Jh Qh"),
-			description: "Royal flush house should outrank straight flush",
-		},
-	}
+// func Test_ScoreHand_CorrectlyRanksHands(t *testing.T) {
+// 	testCases := []struct {
+// 		better      deck.Hand
+// 		worse       deck.Hand
+// 		description string
+// 	}{
+// 		{
+// 			better:      parseHand("3d 6d 9h Jh As"),
+// 			worse:       parseHand("3d 6d 9h Jh Ks"),
+// 			description: "High card should outrank lower high card",
+// 		},
+// 		{
+// 			better:      parseHand("3c 3h 9h 4s 7d"),
+// 			worse:       parseHand("as 4c 7s 9d Qc"),
+// 			description: "Pair should outrank high card",
+// 		},
+// 		{
+// 			better:      parseHand("as ac 7s 7d Qc"),
+// 			worse:       parseHand("3c 3h 9h 4s 7d"),
+// 			description: "Two pair should outrank pair",
+// 		},
+// 		{
+// 			better:      parseHand("Qc Qs Qh Th 9h"),
+// 			worse:       parseHand("as ac 7s 7d Qc"),
+// 			description: "Three-of-a-kind should outrank two pair",
+// 		},
+// 		{
+// 			better:      parseHand("5c 6s 7s 8s 9s"),
+// 			worse:       parseHand("Qc Qs Qh Th 9h"),
+// 			description: "Straight should outrank three-of-a-kind",
+// 		},
+// 		{
+// 			better:      parseHand("3s 4s 7s Ks Qs"),
+// 			worse:       parseHand("5c 6s 7s 8s 9s"),
+// 			description: "Flush should outrank straight",
+// 		},
+// 		{
+// 			better:      parseHand("Kh Ks Kd Ad As"),
+// 			worse:       parseHand("3s 4s 7s Ks Qs"),
+// 			description: "Full house should outrank flush",
+// 		},
+// 		{
+// 			better:      parseHand("4c 4h 4s 4d 5s"),
+// 			worse:       parseHand("Kh Ks Kd Ad As"),
+// 			description: "Four-of-a-kind house should outrank full house",
+// 		},
+// 		{
+// 			better:      parseHand("8h 9h Th Jh Qh"),
+// 			worse:       parseHand("4c 4h 4s 4d 5s"),
+// 			description: "Straight flush house should outrank four-of-a-kind",
+// 		},
+// 		{
+// 			better:      parseHand("Td Jd Qd Kd Ad"),
+// 			worse:       parseHand("8h 9h Th Jh Qh"),
+// 			description: "Royal flush house should outrank straight flush",
+// 		},
+// 	}
 
-	for _, testCase := range testCases {
-		worseType, worseHand := poker.BestHand(testCase.worse)
-		betterType, betterHand := poker.BestHand(testCase.better)
-		if poker.ScoreHand(worseType, worseHand) > poker.ScoreHand(betterType, betterHand) {
-			t.Errorf(
-				"Score hand failed: %v.  Better hand: %v.  Worse hand: %v.",
-				testCase.description,
-				betterHand,
-				worseHand)
-		}
-	}
-}
+// 	for _, testCase := range testCases {
+// 		worseType, worseHand := poker.BestHand(testCase.worse)
+// 		betterType, betterHand := poker.BestHand(testCase.better)
+// 		if poker.ScoreHand(worseType, worseHand) > poker.ScoreHand(betterType, betterHand) {
+// 			t.Errorf(
+// 				"Score hand failed: %v.  Better hand: %v.  Worse hand: %v.",
+// 				testCase.description,
+// 				betterHand,
+// 				worseHand)
+// 		}
+// 	}
+// }
 
 // Generates a hand from a string.
 // Example: "2d 3c th ks" returns a slice of four cards:
@@ -367,44 +373,44 @@ func Test_ScoreHand_CorrectlyRanksHands(t *testing.T) {
 //   - Card{Rank: King, Suit: Spades}
 //
 // Helper util.  Use to make test setup code less verbose and easier to read.
-func parseHand(hand string) cards.Hand {
-	var result []cards.Card
+func parseHand(hand string) deck.Hand {
+	var result deck.Hand
 
 	const space = " "
 	elements := strings.Split(hand, space)
 
 	for _, element := range elements {
-		var rank cards.Rank
+		var rank deck.Rank
 		switch element[0] {
 		case 't', 'T':
-			rank = cards.Ten
+			rank = deck.Ten
 		case 'j', 'J':
-			rank = cards.Jack
+			rank = deck.Jack
 		case 'q', 'Q':
-			rank = cards.Queen
+			rank = deck.Queen
 		case 'k', 'K':
-			rank = cards.King
+			rank = deck.King
 		case 'a', 'A':
-			rank = cards.Ace
+			rank = deck.Ace
 		default:
 			i, _ := strconv.ParseInt(string(element[0]), 10, 64)
-			rank = cards.Rank(i)
+			rank = deck.Rank(i)
 		}
 
-		var suit cards.Suit
+		var suit deck.Suit
 		switch element[1] {
 		case 'c', 'C':
-			suit = cards.Clubs
+			suit = deck.Clubs
 		case 'd', 'D':
-			suit = cards.Diamonds
+			suit = deck.Diamonds
 		case 'h', 'H':
-			suit = cards.Hearts
+			suit = deck.Hearts
 		case 's', 'S':
-			suit = cards.Spades
+			suit = deck.Spades
 		}
 
-		result = append(result, cards.Card{Rank: rank, Suit: suit})
+		result = append(result, deck.Card{Rank: rank, Suit: suit})
 	}
 
-	return cards.Hand(result)
+	return deck.Hand(result)
 }

@@ -26,7 +26,7 @@ const (
 // TODO: Review and use cards.OrderedHand over cards.Hand, where appropriate.
 
 // Returns the best hand available.
-func BestHand(hand cards.Hand) (HandType, cards.Hand) {
+func BestHand_old(hand cards.Hand) (HandType, cards.Hand) {
 	// # Summary
 	//
 	// There are two phases to this method.
