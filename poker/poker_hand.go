@@ -1,17 +1,43 @@
 package poker
 
 import (
+	"log"
 	"slices"
 
 	"github.com/David-Rushton/card-collection/deck"
 )
 
-func BestHand(hand deck.Hand) (HandType, deck.Hand) {
-	return BestHand2(deck.Hand{}, hand)
+type PokerHand struct {
+	Score int64
+	Name  HandName
+	Hand  deck.Hand
+}
+
+// https://en.wikipedia.org/wiki/Texas_hold_%27em#Hand_values
+type HandName int
+
+const (
+	HighCard HandName = iota
+	Pair
+	TwoPairs
+	ThreeOfAKind
+	Straight
+	Flush
+	FullHouse
+	FourOfAKind
+	StraightFlush
+	RoyalFlush
+)
+
+func BestHand(hand deck.Hand) PokerHand {
+	handName, hand := getBestHand(deck.Hand{}, hand)
+	handScore := scoreHand(handName, hand)
+
+	return PokerHand{handScore, handName, hand}
 }
 
 // Returns the best hand that can be constructed from the passed hand.
-func BestHand2(board, players deck.Hand) (HandType, deck.Hand) {
+func getBestHand(board, players deck.Hand) (HandName, deck.Hand) {
 	// ## Summary
 	//
 	// There are two phases to this method:
@@ -203,4 +229,50 @@ func addKickers(hand deck.Hand, kickers deck.Hand) deck.Hand {
 	return hand.AppendWhen(kickers, required, func(c deck.Card) bool {
 		return !slices.Contains(hand, c)
 	})
+}
+
+// Scores a hand.
+// Bigger is better.
+func scoreHand(HandType HandName, hand deck.Hand) int64 {
+	// Each hand is assigned an integer score.
+	//
+	// The first two digits are hand type, where better hands are assigned a higher multiple.
+	// The next two digits are the value of the first cards rank.  Ace == 13, King == 12, on so on.
+	// Until we reach 2, with is worth 02.  We continue with the rest of the cards.
+	//
+	// Example Hand:
+	// Type: Straight
+	// Cards: 7 Diamonds, 8 Clubs, 9 Spades, 10 Spades and Jack of Clubs
+	//
+	// Straight is the 5th best hand.  This scores 04, as we index zero.  Followed by 07 for the
+	// 7 of diamonds, and 08 for the 8 of clubs.  Etc.
+	//
+	// Result: 04 07 08 09 10 11
+	// Formatted: 40,708,091,011
+	//
+	// In this case a straight starting with an 8 and ending with a Queen would command a better
+	// score.
+
+	if len(hand) != 5 {
+		log.Fatalf("Cannot score hand.  The hand contains too many cards.  Expected 5 but found %v.", len(hand))
+	}
+
+	toScore := func(rank deck.Rank) int64 {
+		if rank == deck.Ace {
+			return int64(deck.King) + 1
+		}
+
+		return int64(rank)
+	}
+
+	var score int64
+	multiplier := int64(1)
+	for i := len(hand) - 1; i >= 0; i-- {
+		score += toScore(hand[i].Rank) * multiplier
+		multiplier *= 100
+	}
+
+	score += int64(HandType) * multiplier
+
+	return int64(score)
 }
